@@ -1,4 +1,7 @@
 #include "ServerApp.h"
+#include "Router.h"
+#include "RootHandler.h"
+#include "NotFoundHandler.h"
 
 void ServerApp::initialize(Application &self)
 {
@@ -46,20 +49,54 @@ void ServerApp::uninitialize()
     ServerApplication::uninitialize();
 }
 
+void ServerApp::defineOptions(Poco::Util::OptionSet &options)
+{
+    ServerApplication::defineOptions(options);
+    options.addOption(
+        Poco::Util::Option("help", "h", "display help information")
+            .required(false)
+            .repeatable(false)
+            .callback(Poco::Util::OptionCallback<ServerApp>(this, &ServerApp::handleHelp)));
+}
+
+void ServerApp::handleHelp(const std::string &name, const std::string &value)
+{
+    m_helpRequested = true;
+    Poco::Util::HelpFormatter helpFormatter(options());
+    helpFormatter.setCommand(commandName());
+    helpFormatter.setUsage("OPTIONS");
+    helpFormatter.setHeader("A sample HTTP server application.");
+    helpFormatter.format(std::cout);
+    stopOptionsProcessing();
+}
+
 int ServerApp::main(const std::vector<std::string> &args)
 {
-    Poco::UInt16 port = 1234;
-    Poco::Net::HTTPServerParams *pParams = new Poco::Net::HTTPServerParams;
-    pParams->setMaxQueued(10);
-    pParams->setMaxThreads(16);
-    Poco::Net::ServerSocket svs(port); // set-up a server socket
+    if (!m_helpRequested) {
+        Poco::UInt16 port = 1234;
+        Poco::Net::HTTPServerParams *pParams = new Poco::Net::HTTPServerParams;
+        pParams->setMaxQueued(10);
+        pParams->setMaxThreads(16);
+        Poco::Net::ServerSocket svs(port); // set-up a server socket
 
-    Poco::Net::HTTPServer server(new MyRequestHandlerFactory(), svs, pParams);
-    server.start();
+        m_router = new Router();
+        m_router->addRoute("/root", [](Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) {
+            RootHandler handler;
+            handler.handleRequest(request, response);
+        });
 
-    Poco::Logger &logger = Poco::Logger::root();
-    poco_information(logger, "================ App Start ================");
-    waitForTerminationRequest();
-    server.stop();
+        m_router->setDefaultHandler([](Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response) {
+            NotFoundHandler handler;
+            handler.handleRequest(request, response);
+        }); 
+
+        Poco::Net::HTTPServer server(m_router, svs, pParams);
+        
+        server.start();
+        Poco::Logger &logger = Poco::Logger::root();
+        poco_information(logger, "================ App Start ================");
+        waitForTerminationRequest();
+        server.stop();
+    }
     return Application::EXIT_OK;
 }

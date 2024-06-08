@@ -12,20 +12,28 @@
 #include <Poco/DateTimeFormatter.h>
 #include <Poco/DateTimeFormat.h>
 #include <Poco/Format.h>
+#include "Router.h"
 
-#include "MyRequestHandlerFactory.h"
 
 class ServerApp : public Poco::Util::ServerApplication
 {
 public:
-    ServerApp() {}
+    ServerApp() : m_helpRequested(false) {}
     ~ServerApp() {}
 
 protected:
-    void initialize(Application &self);
+    void initialize(Application &self) override;
+    void uninitialize() override;
+    void defineOptions(Poco::Util::OptionSet& options) override;
+    void handleHelp(const std::string& name, const std::string& value);
+    int main(const std::vector<std::string> &args) override;
+
+
+private:
     void initializeLogger();
-    void uninitialize();
-    int main(const std::vector<std::string> &args);
+    bool m_helpRequested;
+
+    Router *m_router;
 };
 
 #endif
