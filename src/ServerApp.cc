@@ -29,7 +29,7 @@ void ServerApp::initializeLogger()
     pFileChannel->setProperty("times", "local");
 
     // 设置是否在每次写入日志消息后立即刷新文件缓冲区
-    pFileChannel->setProperty("flush", "false");
+    pFileChannel->setProperty("flush", "true");
 
     // 设置是否在打开日志文件时进行旋转
     pFileChannel->setProperty("rotateOnOpen", "true");

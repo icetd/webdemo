@@ -6,6 +6,7 @@
 #include <Poco/JSON/JSON.h>
 #include <Poco/JSON/Array.h>
 #include <Poco/JSON/Object.h>
+#include <Poco/JSON/Parser.h>
 
 static void saveLog(Poco::Net::HTTPServerRequest &request) {
     Poco::Logger &logger = Poco::Logger::root();
@@ -79,7 +80,30 @@ void RootHandler::handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Net
 
     } else if (request.getMethod() == Poco::Net::HTTPRequest::HTTP_POST) {
         jsonObj.set("method", "POST");
+        Poco::JSON::Array fArr;
+        Poco::JSON::Object orange;
+        orange.set("name", "orange");
+        orange.set("color", "orange");
         
+        fArr.add(orange);
+        Poco::JSON::Object apple;
+        apple.set("name", "apple");
+        apple.set("color", "red");
+        fArr.add(apple);
+        Poco::JSON::Object strawberry;
+        strawberry.set("name", "strawberry");
+        strawberry.set("color", "red");
+        fArr.add(strawberry);
+        jsonObj.set("fruits", fArr);
+
+#if 0
+        // Read the request body
+        std::istream &istr = request.stream();
+        std::string body;
+        Poco::StreamCopier::copyToString(istr, body);
+        std::cout << "Request Body: " << body << std::endl;
+
+#endif
         // DO POST 处理表单数据
         if (request.getContentType().find("application/x-www-form-urlencoded") != std::string::npos ||
             request.getContentType().find("multipart/form-data") != std::string::npos) {
@@ -87,7 +111,17 @@ void RootHandler::handleRequest(Poco::Net::HTTPServerRequest &request, Poco::Net
             for (const auto &field : form) {
                 std::cout << "Field name: " << field.first << ":" << field.second << std::endl;
             }
+        } else if (request.getContentType().find("application/json") != std::string::npos) {
+                std::istream& istr = request.stream();
+                Poco::JSON::Parser parser;
+                Poco::Dynamic::Var result = parser.parse(istr);
+                Poco::JSON::Object::Ptr json = result.extract<Poco::JSON::Object::Ptr>();
+
+                std::ostringstream oss;
+                json->stringify(oss, 2);  // pretty print with indentation
+                std::cout << "Parsed JSON: " << oss.str() << std::endl;
         }
+
     } else {
         jsonObj.set("error", "Method not allowed");
         response.setStatus(Poco::Net::HTTPResponse::HTTP_METHOD_NOT_ALLOWED);
