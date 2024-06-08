@@ -24,8 +24,6 @@ public:
 protected:
     void initialize(Application &self) override;
     void uninitialize() override;
-    void defineOptions(Poco::Util::OptionSet& options) override;
-    void handleHelp(const std::string& name, const std::string& value);
     int main(const std::vector<std::string> &args) override;
 
 

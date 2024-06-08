@@ -49,27 +49,6 @@ void ServerApp::uninitialize()
     ServerApplication::uninitialize();
 }
 
-void ServerApp::defineOptions(Poco::Util::OptionSet &options)
-{
-    ServerApplication::defineOptions(options);
-    options.addOption(
-        Poco::Util::Option("help", "h", "display help information")
-            .required(false)
-            .repeatable(false)
-            .callback(Poco::Util::OptionCallback<ServerApp>(this, &ServerApp::handleHelp)));
-}
-
-void ServerApp::handleHelp(const std::string &name, const std::string &value)
-{
-    m_helpRequested = true;
-    Poco::Util::HelpFormatter helpFormatter(options());
-    helpFormatter.setCommand(commandName());
-    helpFormatter.setUsage("OPTIONS");
-    helpFormatter.setHeader("A sample HTTP server application.");
-    helpFormatter.format(std::cout);
-    stopOptionsProcessing();
-}
-
 int ServerApp::main(const std::vector<std::string> &args)
 {
     if (!m_helpRequested) {
